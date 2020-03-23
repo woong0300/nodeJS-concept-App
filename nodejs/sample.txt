@@ -1,0 +1,4 @@
+ECMAScript 2015(ES6)와 그 다음
+Node.js는 V8의 최신 버전으로 만들었습니다. V8을 최신 릴리스로 유지하기 때문에 Node.js 개발자에게 JavaScript ECMA-262 명세의 새로운 기능을 제때에 지원하면서 성능과 안정성 개선도 할 수 있습니다.
+
+모든 ECMAScript 2015(ES6) 기능은 shipping, staged, in progress라는 세 가지 그룹으로 나뉩니다.
