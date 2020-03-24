@@ -1,54 +1,185 @@
+// pm2를 작동시키기 위해서
+// 권한을 잠시 해제  Set-ExecutionPolicy Unrestricted
+// 출처 : https://gist.github.com/jwgo/63292c48ecc2040ac5aec2b756858bf0
+
 var http = require("http");
 var fs = require("fs");
 var url = require("url");
+var qs = require("querystring");
+
+function templateHTML(title, list, body, control) {
+  return `
+  <!doctype html>
+  <html>
+  <head>
+    <title>WEB1 - ${title}</title>
+    <meta charset="utf-8">
+  </head>
+  <body>
+    <h1><a href="/">WEB</a></h1>
+    ${list}
+    ${control}
+    ${body}
+  </body>
+  </html>
+  `;
+}
+function templateList(filelist) {
+  var list = "<ul>";
+  var i = 0;
+  while (i < filelist.length) {
+    list = list + `<li><a href="/?id=${filelist[i]}">${filelist[i]}</a></li>`;
+    i = i + 1;
+  }
+  list = list + "</ul>";
+  return list;
+}
+//구조를 보면 pathname에 따라서 각각의 정보를 받아내고 수정해서 그려주는 방식이다.
+//왜 MVC모델을 사용하는지 알겠지?? 대충 유추가 된다.
+//템플릿이라는 뷰에 모델을 받아와서 그려주고 컨트롤을 해주는 기능마다 따로 구현을 해놓은 거지
 
 var app = http.createServer(function(request, response) {
   var _url = request.url;
   var queryData = url.parse(_url, true).query;
-  var title = queryData.id;
-  console.log(queryData.id);
-  if (_url == "/") {
-    title = "Welcome";
-  }
-  if (_url == "/favicon.ico") {
+  var pathname = url.parse(_url, true).pathname;
+  if (pathname === "/") {
+    if (queryData.id === undefined) {
+      fs.readdir("./data", function(error, filelist) {
+        var title = "Welcome";
+        var description = "Hello, Node.js";
+        var list = templateList(filelist);
+        var template = templateHTML(
+          title,
+          list,
+          `<h2>${title}</h2>${description}`,
+          `<a href="/create">create</a>`
+        );
+        response.writeHead(200);
+        response.end(template);
+      });
+    } else {
+      fs.readdir("./data", function(error, filelist) {
+        fs.readFile(`data/${queryData.id}`, "utf8", function(err, description) {
+          var title = queryData.id;
+          var list = templateList(filelist);
+          var template = templateHTML(
+            title,
+            list,
+            `<h2>${title}</h2>${description}`,
+            ` <a href="/create">create</a>
+                <a href="/update?id=${title}">update</a>
+                <form action="delete_process" method="post">
+                  <input type="hidden" name="id" value="${title}">
+                  <input type="submit" value="delete">
+                </form>`
+          );
+          response.writeHead(200);
+          response.end(template);
+        });
+      });
+    }
+  } else if (pathname === "/create") {
+    fs.readdir("./data", function(error, filelist) {
+      var title = "WEB - create";
+      var list = templateList(filelist);
+      var template = templateHTML(
+        title,
+        list,
+        `
+          <form action="/create_process" method="post">
+            <p><input type="text" name="title" placeholder="title"></p>
+            <p>
+              <textarea name="description" placeholder="description"></textarea>
+            </p>
+            <p>
+              <input type="submit">
+            </p>
+          </form>
+        `,
+        ""
+      );
+      response.writeHead(200);
+      response.end(template);
+    });
+  } else if (pathname === "/create_process") {
+    var body = "";
+    request.on("data", function(data) {
+      body = body + data;
+    });
+    request.on("end", function() {
+      var post = qs.parse(body);
+      var title = post.title;
+      var description = post.description;
+      fs.writeFile(`data/${title}`, description, "utf8", function(err) {
+        response.writeHead(302, { Location: `/?id=${title}` });
+        response.end();
+      });
+    });
+  } else if (pathname === "/update") {
+    fs.readdir("./data", function(error, filelist) {
+      fs.readFile(`data/${queryData.id}`, "utf8", function(err, description) {
+        var title = queryData.id;
+        var list = templateList(filelist);
+        var template = templateHTML(
+          title,
+          list,
+          `
+            <form action="/update_process" method="post">
+              <input type="hidden" name="id" value="${title}">
+              <p><input type="text" name="title" placeholder="title" value="${title}"></p>
+              <p>
+                <textarea name="description" placeholder="description">${description}</textarea>
+              </p>
+              <p>
+                <input type="submit">
+              </p>
+            </form>
+            `,
+          `<a href="/create">create</a> <a href="/update?id=${title}">update</a>`
+        );
+        response.writeHead(200);
+        response.end(template);
+      });
+    });
+  } else if (pathname === "/update_process") {
+    var body = "";
+    request.on("data", function(data) {
+      body = body + data;
+    });
+    request.on("end", function() {
+      var post = qs.parse(body);
+      var id = post.id;
+      var title = post.title;
+      var description = post.description;
+      fs.rename(`data/${id}`, `data/${title}`, function(error) {
+        fs.writeFile(`data/${title}`, description, "utf8", function(err) {
+          response.writeHead(302, { Location: `/?id=${title}` });
+          response.end();
+        });
+      });
+    });
+  } else if (pathname === "/delete_process") {
+    var body = "";
+    request.on("data", function(data) {
+      body = body + data;
+    });
+    request.on("end", function() {
+      var post = qs.parse(body);
+      var id = post.id;
+      fs.unlink(`data/${id}`, function(error) {
+        response.writeHead(302, { Location: `/` });
+        response.end();
+      });
+    });
+  } else {
     response.writeHead(404);
-    response.end();
-    return;
+    response.end("Not found");
   }
-  response.writeHead(200);
-  console.log(queryData.id);
-  fs.readFile(`data/${queryData.id}`, "utf8", function(err, description) {
-    if (err) console.log("Error!!");
-
-    var template = `
-    <!DOCTYPE html>
-      <html>
-      <head>
-          <title>WEB1 - ${title}</title>
-          <meta charset="utf-8" />
-      </head>
-      <body>
-          <h1><a href="/">WEB</a></h1>
-          <ol>
-          <li><a href="1.html">HTML</a></li>
-          <li><a href="2.html">CSS</a></li>
-          <li><a href="3.html">JavaScript</a></li>
-          </ol>
-          <h2>${title}</h2>
-          <p>
-          ${description}
-          </p>
-      </body>
-      </html>
-  
-    `;
-    response.end(template);
-  });
-
-  //사용자에게 전송할 데이터를 end에 넣어주면 된다.
-  //사용자가 접속한 URL에 따라서 파일들을 읽어주는 부분
 });
 app.listen(3000);
+
+//사용자에게 전송할 데이터를 end에 넣어주면 된다.
+//사용자가 접속한 URL에 따라서 파일들을 읽어주는 부분
 
 //node main.js 명령어로 실행시키면 기본으로 3000포트에서 웹서버가 동작한다.
 //http://localhost:3000/
