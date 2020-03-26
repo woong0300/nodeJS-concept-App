@@ -1,0 +1,25 @@
+{
+  "name": "nodejs-concept-app",
+  "version": "1.0.0",
+  "description": "NodeJS Concept Studying App",
+  "main": "main.js",
+  "directories": {
+    "lib": "lib"
+  },
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/woong0300/nodeJS-concept-App.git"
+  },
+  "author": "Jin Hee Woong <woong0300@naver.com>",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/woong0300/nodeJS-concept-App/issues"
+  },
+  "homepage": "https://github.com/woong0300/nodeJS-concept-App#readme",
+  "dependencies": {
+    "sanitize-html": "^1.22.1"
+  }
+}
