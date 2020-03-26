@@ -13,6 +13,12 @@ var template = require("./lib/template.js");
 var path = require("path");
 var sanitizeHtml = require("sanitize-html");
 
+//http 모듈이자 객체, 그 안에 createServer메소드(함수)가 있다.
+//또한 함수를 인자로 받기 때문에 내부에 저렇게 긴 코드를 넣어놓을 수 있던거야.
+//우리가 원하는 response를 만들어 주느라 이렇게 길어지는 거고
+//App이라는 변수에 http객체가 담기는 거고
+//마지막에 aa.listen()을 통해 request에 응답할 수 있는 서버를 열어주는 거야.
+// 우리가 듣느다고 한 포트를 주목하면서 우리의 app이 응답하려고 할거야.
 var app = http.createServer(function(request, response) {
   var _url = request.url;
   var queryData = url.parse(_url, true).query;

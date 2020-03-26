@@ -1,5 +1,8 @@
 node_modules
+nodejs
+data
 build
+coding.png
 npm-debug.log
 .env
 .DS_Store
